@@ -1,7 +1,7 @@
 {
   "name": "cxone-utils",
   "version": "0.0.11",
-  "description": "CXone utility nodes for Cognigy.AI — authentication and API helpers",
+  "description": "Utility nodes created by and for Ben Elliot",
   "main": "build/module.js",
   "scripts": {
     "transpile": "tsc -p .",
