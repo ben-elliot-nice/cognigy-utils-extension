@@ -12,7 +12,7 @@ interface ICxoneAuthCache {
 interface ICleanChunk {
 	title: string;
 	content: string;
-	relevance_percent: number;
+	relevance_percent: string;
 }
 
 export interface IGetChunksParams extends INodeFunctionBaseParams {
@@ -241,7 +241,7 @@ export const getChunks = createNodeDescriptor({
 			const clean: ICleanChunk[] = (results?.results ?? []).map((chunk: any) => ({
 				title: chunk?.metadata?.Title ?? "",
 				content: chunk?.content?.text ?? "",
-				relevance_percent: Math.round((chunk?.score ?? 0) * 100)
+				relevance_percent: `${Math.round((chunk?.score ?? 0) * 100)}%`
 			}));
 
 			if (cleanStorageType === "context") {
