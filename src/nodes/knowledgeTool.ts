@@ -36,7 +36,7 @@ export interface IKnowledgeToolParams extends INodeFunctionBaseParams {
 
 export const knowledgeTool = createNodeDescriptor({
 	type: "knowledgeTool",
-	defaultLabel: "Knowledge Tool",
+	defaultLabel: "CX1 Knowledge Tool",
 	summary: "Retrieve knowledge chunks from CXone Knowledge Hub as an AI agent tool",
 
 	// Must match the built-in to slot into aiAgentJob correctly
