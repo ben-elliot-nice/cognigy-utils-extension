@@ -1,6 +1,6 @@
 import { createNodeDescriptor, INodeFunctionBaseParams } from "@cognigy/extension-tools";
 import axios from "axios";
-import { ensureCxoneAuth, ICxoneAuthCache } from "../utils/cxoneAuth";
+import { ICxoneAuthCache } from "../utils/cxoneAuth";
 
 const RETRIEVAL_PATH = "/eai-knowledge-hub-services/retrieval-service/v1/retrieve";
 
@@ -19,13 +19,6 @@ interface ICleanOutput {
 export interface IGetChunksParams extends INodeFunctionBaseParams {
 	config: {
 		// Auth
-		authMode: "cache" | "inline";
-		authConnection?: {
-			clientId: string;
-			clientSecret: string;
-			cxoneUsername: string;
-			cxonePassword: string;
-		};
 		cacheStorageType: "context" | "input";
 		cacheKey: string;
 		// Query
@@ -52,30 +45,6 @@ export const getChunks = createNodeDescriptor({
 	fields: [
 		// --- Auth ---
 		{
-			key: "authMode",
-			label: "Auth Mode",
-			type: "select",
-			defaultValue: "cache",
-			params: {
-				options: [
-					{ label: "use token cache", value: "cache" },
-					{ label: "authenticate inline", value: "inline" }
-				],
-				required: true
-			},
-			description: "Use a cached token from the Get Token node, or authenticate inline before querying"
-		},
-		{
-			key: "authConnection",
-			label: "CXone Auth",
-			type: "connection",
-			condition: { key: "authMode", value: "inline" },
-			params: {
-				connectionType: "cxone-auth",
-				required: true
-			}
-		},
-		{
 			key: "cacheStorageType",
 			label: "Token Cache Location",
 			type: "select",
@@ -87,7 +56,7 @@ export const getChunks = createNodeDescriptor({
 				],
 				required: true
 			},
-			description: "Where to read (cache mode) or read/write (inline mode) the auth cache"
+			description: "Where to read the auth cache written by the Get Token node"
 		},
 		{
 			key: "cacheKey",
@@ -189,7 +158,7 @@ export const getChunks = createNodeDescriptor({
 			key: "authSection",
 			label: "Authentication",
 			defaultCollapsed: false,
-			fields: ["authMode", "authConnection", "cacheStorageType", "cacheKey"]
+			fields: ["cacheStorageType", "cacheKey"]
 		},
 		{
 			key: "query",
@@ -226,8 +195,6 @@ export const getChunks = createNodeDescriptor({
 	function: async ({ cognigy, config }: IGetChunksParams) => {
 		const { api, context, input } = cognigy;
 		const {
-			authMode,
-			authConnection,
 			cacheStorageType,
 			cacheKey,
 			knowledgehubId,
@@ -244,32 +211,18 @@ export const getChunks = createNodeDescriptor({
 
 		const log = (msg: string) => api.log("info", `CXone Get Chunks: ${msg}`);
 
-		// Resolve auth
+		// Read auth cache written by Get Token node
 		const cacheStore = cacheStorageType === "context" ? context : input;
 		const cache: ICxoneAuthCache = (cacheStore[cacheKey] as ICxoneAuthCache) || {};
 
-		if (authMode === "inline") {
-			if (!authConnection) {
-				throw new Error("CXone Get Chunks: inline auth mode requires a CXone Auth connection");
-			}
-			await ensureCxoneAuth(cache, authConnection, log);
-
-			if (cacheStorageType === "context") {
-				context[cacheKey] = cache;
-			} else {
-				// @ts-ignore
-				api.addToInput(cacheKey, cache);
-			}
-		} else {
-			if (!cache.token) {
-				throw new Error("CXone Get Chunks: no valid auth token in cache — run Get Token node first, or switch to 'authenticate inline' mode");
-			}
-			if (!cache.apiBaseUrl) {
-				throw new Error("CXone Get Chunks: apiBaseUrl missing from auth cache");
-			}
-			if (!cache.tenantId) {
-				throw new Error("CXone Get Chunks: tenantId missing from auth cache");
-			}
+		if (!cache.token) {
+			throw new Error("CXone Get Chunks: no auth token in cache — run Get Token node first");
+		}
+		if (!cache.apiBaseUrl) {
+			throw new Error("CXone Get Chunks: apiBaseUrl missing from auth cache");
+		}
+		if (!cache.tenantId) {
+			throw new Error("CXone Get Chunks: tenantId missing from auth cache");
 		}
 
 		// Build and send request
