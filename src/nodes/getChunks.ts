@@ -15,6 +15,12 @@ interface ICleanChunk {
 	relevance_percent: string;
 }
 
+interface ICleanOutput {
+	success: boolean;
+	message: string;
+	content: ICleanChunk[];
+}
+
 export interface IGetChunksParams extends INodeFunctionBaseParams {
 	config: {
 		cacheStorageType: "context" | "input";
@@ -238,11 +244,17 @@ export const getChunks = createNodeDescriptor({
 
 		// Write clean output if toggled
 		if (cleanOutput) {
-			const clean: ICleanChunk[] = (results?.results ?? []).map((chunk: any) => ({
+			const chunks: ICleanChunk[] = (results?.results ?? []).map((chunk: any) => ({
 				title: chunk?.metadata?.Title ?? "",
 				content: chunk?.content?.text ?? "",
 				relevance_percent: `${Math.round((chunk?.score ?? 0) * 100)}%`
 			}));
+
+			const clean: ICleanOutput = {
+				success: chunks.length > 0,
+				message: chunks.length > 0 ? `${chunks.length} articles found` : "No relevant content found",
+				content: chunks
+			};
 
 			if (cleanStorageType === "context") {
 				context[cleanStorageKey] = clean;
@@ -251,7 +263,7 @@ export const getChunks = createNodeDescriptor({
 				api.addToInput(cleanStorageKey, clean);
 			}
 
-			api.log("info", `CXone Get Chunks: wrote ${clean.length} clean chunks to ${cleanStorageType}.${cleanStorageKey}`);
+			api.log("info", `CXone Get Chunks: wrote clean output to ${cleanStorageType}.${cleanStorageKey} — ${clean.message}`);
 		}
 	}
 });
