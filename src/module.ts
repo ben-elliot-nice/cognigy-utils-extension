@@ -1,16 +1,21 @@
 import { createExtension } from "@cognigy/extension-tools";
 
-/* import all nodes */
-import { exampleNode } from "./nodes/exampleNode";
+/* nodes */
+import { getToken } from "./nodes/getToken";
+
+/* connections */
+import { cxoneAuth } from "./connections/cxoneAuth";
 
 export default createExtension({
 	nodes: [
-		exampleNode
+		getToken
 	],
 
-	connections: [],
+	connections: [
+		cxoneAuth
+	],
 
 	options: {
-		label: "My Extension"
+		label: "CXone Utils"
 	}
 });
