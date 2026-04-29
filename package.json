@@ -1,6 +1,6 @@
 {
   "name": "cxone-utils",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "CXone utility nodes for Cognigy.AI — authentication and API helpers",
   "main": "build/module.js",
   "scripts": {
