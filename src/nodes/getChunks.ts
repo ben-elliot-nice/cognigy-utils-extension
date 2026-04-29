@@ -33,11 +33,12 @@ export interface IGetChunksParams extends INodeFunctionBaseParams {
 		queryText: string;
 		numberOfResults: number;
 		filter?: object;
-		// Raw storage
+		// Raw output
+		writeRawOutput: boolean;
 		storageType: "context" | "input";
 		storageKey: string;
 		// Clean output
-		cleanOutput: boolean;
+		writeCleanOutput: boolean;
 		cleanStorageType: "context" | "input";
 		cleanStorageKey: string;
 	};
@@ -49,7 +50,7 @@ export const getChunks = createNodeDescriptor({
 	summary: "Retrieve knowledge chunks from the CXone Knowledge Hub retrieval service",
 	tags: ["service"],
 	fields: [
-		// --- Auth mode ---
+		// --- Auth ---
 		{
 			key: "authMode",
 			label: "Auth Mode",
@@ -57,8 +58,8 @@ export const getChunks = createNodeDescriptor({
 			defaultValue: "cache",
 			params: {
 				options: [
-					{ label: "Use Token Cache", value: "cache" },
-					{ label: "Authenticate Inline", value: "inline" }
+					{ label: "use token cache", value: "cache" },
+					{ label: "authenticate inline", value: "inline" }
 				],
 				required: true
 			},
@@ -81,8 +82,8 @@ export const getChunks = createNodeDescriptor({
 			defaultValue: "context",
 			params: {
 				options: [
-					{ label: "Context", value: "context" },
-					{ label: "Input", value: "input" }
+					{ label: "context", value: "context" },
+					{ label: "input", value: "input" }
 				],
 				required: true
 			},
@@ -122,31 +123,40 @@ export const getChunks = createNodeDescriptor({
 			type: "json",
 			description: "Optional filter object. Supports operators: equals, notEquals, greaterThan, greaterThanOrEquals, lessThan, lessThanOrEquals, in, notIn, startsWith. Combine with andAll / orAll arrays."
 		},
-		// --- Raw storage ---
+		// --- Raw output ---
+		{
+			key: "writeRawOutput",
+			label: "Store Full Chunk Data",
+			type: "toggle",
+			defaultValue: true,
+			description: "Write the full API response to a key"
+		},
 		{
 			key: "storageType",
-			label: "Store Results In",
+			label: "Raw Output Location",
 			type: "select",
 			defaultValue: "context",
+			condition: { key: "writeRawOutput", value: true },
 			params: {
 				options: [
-					{ label: "Context", value: "context" },
-					{ label: "Input", value: "input" }
+					{ label: "context", value: "context" },
+					{ label: "input", value: "input" }
 				],
 				required: true
 			}
 		},
 		{
 			key: "storageKey",
-			label: "Storage Key",
+			label: "Raw Output Key",
 			type: "cognigyText",
 			defaultValue: "chunks",
+			condition: { key: "writeRawOutput", value: true },
 			params: { required: true }
 		},
 		// --- Clean output ---
 		{
-			key: "cleanOutput",
-			label: "Also Write Clean Output",
+			key: "writeCleanOutput",
+			label: "Store Clean Content Output",
 			type: "toggle",
 			defaultValue: false,
 			description: "Maps results to { title, content, relevance_percent } and writes to a separate key"
@@ -156,11 +166,11 @@ export const getChunks = createNodeDescriptor({
 			label: "Clean Output Location",
 			type: "select",
 			defaultValue: "context",
-			condition: { key: "cleanOutput", value: true },
+			condition: { key: "writeCleanOutput", value: true },
 			params: {
 				options: [
-					{ label: "Context", value: "context" },
-					{ label: "Input", value: "input" }
+					{ label: "context", value: "context" },
+					{ label: "input", value: "input" }
 				],
 				required: true
 			}
@@ -170,7 +180,7 @@ export const getChunks = createNodeDescriptor({
 			label: "Clean Output Key",
 			type: "cognigyText",
 			defaultValue: "chunksClean",
-			condition: { key: "cleanOutput", value: true },
+			condition: { key: "writeCleanOutput", value: true },
 			params: { required: true }
 		}
 	],
@@ -195,9 +205,12 @@ export const getChunks = createNodeDescriptor({
 		},
 		{
 			key: "storage",
-			label: "Storage",
+			label: "Output",
 			defaultCollapsed: false,
-			fields: ["storageType", "storageKey", "cleanOutput", "cleanStorageType", "cleanStorageKey"]
+			fields: [
+				"writeRawOutput", "storageType", "storageKey",
+				"writeCleanOutput", "cleanStorageType", "cleanStorageKey"
+			]
 		}
 	],
 	form: [
@@ -221,16 +234,17 @@ export const getChunks = createNodeDescriptor({
 			queryText,
 			numberOfResults,
 			filter,
+			writeRawOutput,
 			storageType,
 			storageKey,
-			cleanOutput,
+			writeCleanOutput,
 			cleanStorageType,
 			cleanStorageKey
 		} = config;
 
 		const log = (msg: string) => api.log("info", `CXone Get Chunks: ${msg}`);
 
-		// Resolve auth cache
+		// Resolve auth
 		const cacheStore = cacheStorageType === "context" ? context : input;
 		const cache: ICxoneAuthCache = (cacheStore[cacheKey] as ICxoneAuthCache) || {};
 
@@ -240,7 +254,6 @@ export const getChunks = createNodeDescriptor({
 			}
 			await ensureCxoneAuth(cache, authConnection, log);
 
-			// Write updated cache back
 			if (cacheStorageType === "context") {
 				context[cacheKey] = cache;
 			} else {
@@ -248,9 +261,8 @@ export const getChunks = createNodeDescriptor({
 				api.addToInput(cacheKey, cache);
 			}
 		} else {
-			// Cache mode — validate what we have
 			if (!cache.token) {
-				throw new Error("CXone Get Chunks: no valid auth token in cache — run Get Token node first, or switch to Authenticate Inline mode");
+				throw new Error("CXone Get Chunks: no valid auth token in cache — run Get Token node first, or switch to 'authenticate inline' mode");
 			}
 			if (!cache.apiBaseUrl) {
 				throw new Error("CXone Get Chunks: apiBaseUrl missing from auth cache");
@@ -285,16 +297,18 @@ export const getChunks = createNodeDescriptor({
 		const results = response.data;
 		log("received response");
 
-		// Write raw results
-		if (storageType === "context") {
-			context[storageKey] = results;
-		} else {
-			// @ts-ignore
-			api.addToInput(storageKey, results);
+		// Raw output
+		if (writeRawOutput) {
+			if (storageType === "context") {
+				context[storageKey] = results;
+			} else {
+				// @ts-ignore
+				api.addToInput(storageKey, results);
+			}
 		}
 
-		// Write clean output if toggled
-		if (cleanOutput) {
+		// Clean output
+		if (writeCleanOutput) {
 			const chunks: ICleanChunk[] = (results?.results ?? []).map((chunk: any) => ({
 				title: chunk?.metadata?.Title ?? "",
 				content: chunk?.content?.text ?? "",
