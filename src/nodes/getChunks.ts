@@ -9,20 +9,25 @@ interface ICxoneAuthCache {
 	apiBaseUrl?: string;
 }
 
+interface ICleanChunk {
+	title: string;
+	content: string;
+	relevance_percent: number;
+}
+
 export interface IGetChunksParams extends INodeFunctionBaseParams {
 	config: {
-		// Auth cache location (written by getToken node)
 		cacheStorageType: "context" | "input";
 		cacheKey: string;
-		// Query
 		knowledgehubId: string;
 		queryText: string;
 		numberOfResults: number;
-		// Optional filter (raw JSON object)
 		filter?: object;
-		// Result storage
 		storageType: "context" | "input";
 		storageKey: string;
+		cleanOutput: boolean;
+		cleanStorageType: "context" | "input";
+		cleanStorageKey: string;
 	};
 }
 
@@ -82,7 +87,7 @@ export const getChunks = createNodeDescriptor({
 			type: "json",
 			description: "Optional filter object. Supports operators: equals, notEquals, greaterThan, greaterThanOrEquals, lessThan, lessThanOrEquals, in, notIn, startsWith. Combine with andAll / orAll arrays."
 		},
-		// --- Result storage ---
+		// --- Raw result storage ---
 		{
 			key: "storageType",
 			label: "Store Results In",
@@ -101,6 +106,36 @@ export const getChunks = createNodeDescriptor({
 			label: "Storage Key",
 			type: "cognigyText",
 			defaultValue: "chunks",
+			params: { required: true }
+		},
+		// --- Clean output ---
+		{
+			key: "cleanOutput",
+			label: "Also Write Clean Output",
+			type: "toggle",
+			defaultValue: false,
+			description: "Maps results to { title, content, relevance_percent } and writes to a separate key"
+		},
+		{
+			key: "cleanStorageType",
+			label: "Clean Output Location",
+			type: "select",
+			defaultValue: "context",
+			condition: { key: "cleanOutput", value: true },
+			params: {
+				options: [
+					{ label: "Context", value: "context" },
+					{ label: "Input", value: "input" }
+				],
+				required: true
+			}
+		},
+		{
+			key: "cleanStorageKey",
+			label: "Clean Output Key",
+			type: "cognigyText",
+			defaultValue: "chunksClean",
+			condition: { key: "cleanOutput", value: true },
 			params: { required: true }
 		}
 	],
@@ -127,7 +162,7 @@ export const getChunks = createNodeDescriptor({
 			key: "storage",
 			label: "Storage",
 			defaultCollapsed: false,
-			fields: ["storageType", "storageKey"]
+			fields: ["storageType", "storageKey", "cleanOutput", "cleanStorageType", "cleanStorageKey"]
 		}
 	],
 	form: [
@@ -150,10 +185,12 @@ export const getChunks = createNodeDescriptor({
 			numberOfResults,
 			filter,
 			storageType,
-			storageKey
+			storageKey,
+			cleanOutput,
+			cleanStorageType,
+			cleanStorageKey
 		} = config;
 
-		// Read auth cache from whichever store getToken wrote to
 		const cacheStore = cacheStorageType === "context" ? context : input;
 		const cache = cacheStore[cacheKey] as ICxoneAuthCache | undefined;
 
@@ -167,19 +204,11 @@ export const getChunks = createNodeDescriptor({
 			throw new Error("CXone Get Chunks: tenantId missing from auth cache — run Get Token node first");
 		}
 
-		const url = `${cache.apiBaseUrl}${RETRIEVAL_PATH}`;
-
 		const payload: Record<string, any> = {
 			knowledgehubId,
-			meta: {
-				tenantId: cache.tenantId
-			},
-			query: {
-				queryText
-			},
-			queryConfig: {
-				numberOfResults
-			}
+			meta: { tenantId: cache.tenantId },
+			query: { queryText },
+			queryConfig: { numberOfResults }
 		};
 
 		if (filter && Object.keys(filter).length > 0) {
@@ -188,7 +217,7 @@ export const getChunks = createNodeDescriptor({
 
 		api.log("info", `CXone Get Chunks: querying "${queryText}" against hub ${knowledgehubId}`);
 
-		const response = await axios.post(url, payload, {
+		const response = await axios.post(`${cache.apiBaseUrl}${RETRIEVAL_PATH}`, payload, {
 			headers: {
 				Authorization: `Bearer ${cache.token}`,
 				"Content-Type": "application/json",
@@ -199,11 +228,30 @@ export const getChunks = createNodeDescriptor({
 		const results = response.data;
 		api.log("info", `CXone Get Chunks: received response`);
 
+		// Write raw results
 		if (storageType === "context") {
 			context[storageKey] = results;
 		} else {
 			// @ts-ignore
 			api.addToInput(storageKey, results);
+		}
+
+		// Write clean output if toggled
+		if (cleanOutput) {
+			const clean: ICleanChunk[] = (results?.results ?? []).map((chunk: any) => ({
+				title: chunk?.metadata?.Title ?? "",
+				content: chunk?.content?.text ?? "",
+				relevance_percent: Math.round((chunk?.score ?? 0) * 100)
+			}));
+
+			if (cleanStorageType === "context") {
+				context[cleanStorageKey] = clean;
+			} else {
+				// @ts-ignore
+				api.addToInput(cleanStorageKey, clean);
+			}
+
+			api.log("info", `CXone Get Chunks: wrote ${clean.length} clean chunks to ${cleanStorageType}.${cleanStorageKey}`);
 		}
 	}
 });
