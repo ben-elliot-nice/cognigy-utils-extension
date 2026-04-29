@@ -19,7 +19,7 @@ Add `icon.png` (64x64) to the root directory. This will be included in your exte
 
 ### 3. Customize your extension
 
-- Edit `src/nodes/exampleNode.ts` or create new node files in `src/nodes/`
+- Create new node files in `src/nodes/`
 - Update `src/module.ts` to import and export your nodes
 - Update the `options.label` in `src/module.ts` to match your extension name
 
@@ -76,7 +76,6 @@ Quick steps:
 - `docs/example/` - Working code examples
 
 ✅ **Starter Code**
-- Example node in `src/nodes/exampleNode.ts`
 - Extension module setup in `src/module.ts`
 
 ## Development Workflow

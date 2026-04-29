@@ -16,7 +16,6 @@ This is a Cognigy.AI Extension project that creates custom nodes for Cognigy.AI 
 ├── docs/                       # Documentation
 ├── src/
 │   ├── nodes/                  # Node implementations
-│   │   └── exampleNode.ts
 │   ├── connections/            # Connection schemas (optional)
 │   └── module.ts               # Extension entry point
 ├── package.json                # Version and dependencies

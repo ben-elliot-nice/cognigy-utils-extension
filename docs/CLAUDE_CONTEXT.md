@@ -83,7 +83,7 @@ gh pr create --base develop --head feature/descriptive-name \
 When creating a new node:
 
 1. Create file in `src/nodes/newNode.ts`
-2. Follow the pattern in `src/nodes/exampleNode.ts` or `docs/example/src/nodes/`
+2. Follow the pattern in `docs/example/src/nodes/`
 3. Define TypeScript interface for config
 4. Use `createNodeDescriptor()` with:
    - Descriptive `type` and `defaultLabel`
