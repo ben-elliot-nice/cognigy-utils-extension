@@ -147,21 +147,23 @@ export const startScript = createNodeDescriptor({
 			throw new Error("CXone Start Script: apiBaseUrl missing from auth cache");
 		}
 
-		// Build query string — no encoding, letting CXone handle it as-is
+		// Build query string — scriptPath and Parameters are URL-encoded
 		const queryParts: string[] = [
 			`skillId=${skillId}`,
-			`scriptPath=${scriptPath}`
+			`scriptPath=${encodeURIComponent(scriptPath)}`
 		];
 
 		if (parameters && parameters.trim() !== "") {
-			queryParts.push(`Parameters=${parameters}`);
+			queryParts.push(`Parameters=${encodeURIComponent(parameters)}`);
 		}
 
 		const url = `${cache.apiBaseUrl}${SCRIPT_PATH}?${queryParts.join("&")}`;
 
 		log(`skillId: ${skillId}`);
-		log(`scriptPath: ${scriptPath}`);
-		log(`parameters: ${parameters ?? "(none)"}`);
+		log(`scriptPath (raw): ${scriptPath}`);
+		log(`scriptPath (encoded): ${encodeURIComponent(scriptPath)}`);
+		log(`parameters (raw): ${parameters ?? "(none)"}`);
+		log(`parameters (encoded): ${parameters ? encodeURIComponent(parameters) : "(none)"}`);
 		log(`full URL: ${url}`);
 		log(`token (first 20 chars): ${cache.token.substring(0, 20)}...`);
 

@@ -36,8 +36,8 @@ export const getToken = createNodeDescriptor({
 			defaultValue: "context",
 			params: {
 				options: [
-					{ label: "Context", value: "context" },
-					{ label: "Input", value: "input" }
+					{ label: "context", value: "context" },
+					{ label: "input", value: "input" }
 				],
 				required: true
 			}
