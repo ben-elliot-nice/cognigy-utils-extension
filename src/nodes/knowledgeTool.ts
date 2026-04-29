@@ -254,7 +254,8 @@ export const knowledgeTool = createNodeDescriptor({
 		key: "toolId"
 	},
 
-	function: async ({ cognigy, config }: IKnowledgeToolParams) => {
+	function: async ({ cognigy, config: rawConfig }) => {
+		const config = rawConfig as IKnowledgeToolParams["config"];
 		const { api, context, input } = cognigy;
 		const {
 			cacheStorageType,
