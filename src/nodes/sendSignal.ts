@@ -174,7 +174,7 @@ export const sendSignal = createNodeDescriptor({
 		type: "text",
 		key: "contactId"
 	},
-	function: async ({ cognigy, config }: ISendSignalParams) => {
+	function: async ({ cognigy, config: rawConfig }: INodeFunctionBaseParams) => {
 		const { api, context, input } = cognigy;
 		const {
 			cacheStorageType,
@@ -183,7 +183,7 @@ export const sendSignal = createNodeDescriptor({
 			p1, p2, p3, p4, p5, p6, p7, p8, p9,
 			storageType,
 			storageKey
-		} = config;
+		} = rawConfig as ISendSignalParams["config"];
 
 		const log = (msg: string) => api.log("info", `CXone Send Signal: ${msg}`);
 

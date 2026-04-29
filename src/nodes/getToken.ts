@@ -73,9 +73,9 @@ export const getToken = createNodeDescriptor({
 		type: "text",
 		key: "storageKey"
 	},
-	function: async ({ cognigy, config }: IGetTokenParams) => {
+	function: async ({ cognigy, config: rawConfig }: INodeFunctionBaseParams) => {
 		const { api, context, input } = cognigy;
-		const { authConnection, storageType, storageKey } = config;
+		const { authConnection, storageType, storageKey } = rawConfig as IGetTokenParams["config"];
 
 		const store = storageType === "context" ? context : input;
 		const cache: ICxoneAuthCache = (store[storageKey] as ICxoneAuthCache) || {};

@@ -192,7 +192,7 @@ export const getChunks = createNodeDescriptor({
 		type: "text",
 		key: "queryText"
 	},
-	function: async ({ cognigy, config }: IGetChunksParams) => {
+	function: async ({ cognigy, config: rawConfig }: INodeFunctionBaseParams) => {
 		const { api, context, input } = cognigy;
 		const {
 			cacheStorageType,
@@ -207,7 +207,7 @@ export const getChunks = createNodeDescriptor({
 			writeCleanOutput,
 			cleanStorageType,
 			cleanStorageKey
-		} = config;
+		} = rawConfig as IGetChunksParams["config"];
 
 		const log = (msg: string) => api.log("info", `CXone Get Chunks: ${msg}`);
 
