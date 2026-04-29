@@ -37,14 +37,3 @@ jobs:
           path: ${{ steps.version.outputs.name }}-${{ steps.version.outputs.version }}.tar.gz
           retention-days: 30
 
-      - name: Upload build debug artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-debug-${{ steps.version.outputs.version }}
-          path: |
-            build/
-            package.json
-            package-lock.json
-            README.md
-            icon.png
-          retention-days: 30
