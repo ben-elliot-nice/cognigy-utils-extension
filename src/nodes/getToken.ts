@@ -41,6 +41,7 @@ export const getToken = createNodeDescriptor({
 	type: "getToken",
 	defaultLabel: "Get Token",
 	summary: "Authenticate with CXone and cache the token, tenant ID, and API base URL",
+	tags: ["service"],
 	fields: [
 		{
 			key: "authConnection",

@@ -30,6 +30,7 @@ export const getChunks = createNodeDescriptor({
 	type: "getChunks",
 	defaultLabel: "Get Chunks",
 	summary: "Retrieve knowledge chunks from the CXone Knowledge Hub retrieval service",
+	tags: ["service"],
 	fields: [
 		// --- Auth cache ---
 		{
