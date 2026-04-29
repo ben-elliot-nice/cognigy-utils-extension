@@ -39,7 +39,7 @@ function isTokenExpired(decoded: any): boolean {
 
 export const getToken = createNodeDescriptor({
 	type: "getToken",
-	defaultLabel: "CXone Get Token",
+	defaultLabel: "Get Token",
 	summary: "Authenticate with CXone and cache the token, tenant ID, and API base URL",
 	fields: [
 		{

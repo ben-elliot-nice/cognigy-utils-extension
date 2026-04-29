@@ -28,7 +28,7 @@ export interface IGetChunksParams extends INodeFunctionBaseParams {
 
 export const getChunks = createNodeDescriptor({
 	type: "getChunks",
-	defaultLabel: "CXone Get Chunks",
+	defaultLabel: "Get Chunks",
 	summary: "Retrieve knowledge chunks from the CXone Knowledge Hub retrieval service",
 	fields: [
 		// --- Auth cache ---
