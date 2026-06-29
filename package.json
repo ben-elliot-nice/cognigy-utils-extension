@@ -1,7 +1,7 @@
 {
-  "name": "my-extension",
-  "version": "0.0.1",
-  "description": "A Cognigy.AI Extension",
+  "name": "cxone-utils",
+  "version": "0.0.15",
+  "description": "Utility nodes created by and for Ben Elliot",
   "main": "build/module.js",
   "scripts": {
     "transpile": "tsc -p .",
@@ -11,12 +11,15 @@
   },
   "keywords": [
     "Cognigy.AI",
-    "extensions"
+    "extensions",
+    "CXone",
+    "NICE"
   ],
-  "author": "Your Name",
+  "author": "Ben Elliot <ben.elliot@nice.com>",
   "license": "ISC",
   "dependencies": {
-    "@cognigy/extension-tools": "^0.16.1"
+    "@cognigy/extension-tools": "^0.16.1",
+    "axios": "^1.7.9"
   },
   "devDependencies": {
     "@types/node": "^13.13.15",

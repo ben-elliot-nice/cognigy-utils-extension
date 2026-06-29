@@ -9,6 +9,8 @@
 		"outDir": "build",
 		"sourceMap": true,
 		"moduleResolution": "node",
+		"ignoreDeprecations": "6.0",
+		"esModuleInterop": true
 	},
 	"include": [
 		"src/**/*"
